@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Academic Calendar</title>
+<style>
+    :root {
+        --bg-color: #121212;
+        --card-color: #1e1e1e;
+        --text-color: #e0e0e0;
+        --accent-color: #4CAF50;
+        --accent-hover: #45a049;
+        --border-color: #333;
+        --today-color: #ffeb3b;
+        --modal-bg: #2d2d2d;
+        --deadline-color: #ff5722;
+        --notification-color: #2196F3;
+        --assignment-color: #9c27b0;
+    }
+    
+    body { 
+        font-family: 'Segoe UI', Arial, sans-serif; 
+        margin: 0; 
+        padding: 0; 
+        background: var(--bg-color); 
+        color: var(--text-color);
+        transition: background 0.3s ease;
+    }
+    
+    .container { 
+        display: flex; 
+        flex-wrap: wrap; 
+        max-width: 1200px; 
+        margin: auto; 
+        padding: 20px; 
+        gap: 20px; 
+    }
+    
+    .calendar { 
+        flex: 2; 
+        background: var(--card-color); 
+        border-radius: 10px; 
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3); 
+        padding: 20px; 
+        transition: all 0.3s ease;
+    }
+    
+    .header { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        margin-bottom: 20px;
+    }
+    
+    .header button { 
+        padding: 8px 15px; 
+        border: none; 
+        background: var(--accent-color); 
+        color: white; 
+        border-radius: 5px; 
+        cursor: pointer; 
+        font-weight: bold;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    
+    .header button:hover { 
+        background: var(--accent-hover); 
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+    
+    .days, .dates { 
+        display: grid; 
+        grid-template-columns: repeat(7, 1fr); 
+        gap: 5px;
+    }
+    
+    .days div { 
+        font-weight: bold; 
+        background: var(--accent-color); 
+        color: white; 
+        padding: 12px; 
+        text-align: center; 
+        border-radius: 5px;
+    }
+    
+    .dates div { 
+        padding: 15px; 
+        border: 1px solid var(--border-color); 
+        text-align: center; 
+        cursor: pointer; 
+        min-height: 60px; 
+        position: relative; 
+        transition: all 0.3s ease;
+        border-radius: 5px;
+        background: var(--card-color);
+    }
+    
+    .dates div:hover { 
+        background: #2a2a2a; 
+        transform: translateY(-3px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    .today { 
+        background: var(--today-color) !important; 
+        color: #333 !important;
+        font-weight: bold;
+        box-shadow: 0 0 0 2px rgba(255,235,59,0.3);
+    }
+    
+    .event { 
+        border-radius: 50%; 
+        width: 8px; 
+        height: 8px; 
+        position: absolute; 
+        bottom: 8px; 
+        left: 50%;
+        transform: translateX(-50%);
+        transition: all 0.3s ease;
+    }
+    
+    .deadline { 
+        border-radius: 50%; 
+        width: 8px; 
+        height: 8px; 
+        position: absolute; 
+        bottom: 18px; 
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--deadline-color) !important;
+    }
+    
+    .fade-slide { 
+        animation: fadeSlide 0.5s ease; 
+    }
+    
+    @keyframes fadeSlide {
+        from { opacity: 0; transform: translateX(20px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    
+    .sidebar { 
+        flex: 1; 
+        background: var(--card-color); 
+        border-radius: 10px; 
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3); 
+        padding: 20px; 
+        transition: all 0.3s ease;
+    }
+    
+    .sidebar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .add-event-btn {
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+    
+    .add-event-btn:hover {
+        background: var(--accent-hover);
+        transform: rotate(90deg) scale(1.1);
+    }
+    
+    .event-card { 
+        padding: 12px; 
+        border-radius: 8px; 
+        margin-bottom: 12px; 
+        color: white; 
+        display: flex; 
+        align-items: center; 
+        gap: 12px; 
+        animation: fadeIn 0.5s ease;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: var(--modal-bg);
+        border-left: 4px solid;
+        position: relative;
+    }
+    
+    .event-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    .event-card i { 
+        font-size: 20px; 
+    }
+    
+    .event-card .deadline-indicator {
+        position: absolute;
+        right: 10px;
+        top: 10px;
+        font-size: 12px;
+        color: var(--deadline-color);
+        display: none;
+    }
+    
+    .event-card.has-deadline .deadline-indicator {
+        display: block;
+    }
+    
+    /* New styles for past events and extension */
+    .past-event {
+        opacity: 0.6;
+        background: linear-gradient(45deg, #333, #555) !important;
+    }
+    
+    .overdue {
+        border-left: 4px solid #ff5722 !important;
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 0.8; }
+        50% { opacity: 1; }
+        100% { opacity: 0.8; }
+    }
+    
+    .extend-btn {
+        background: #ff9800 !important;
+        color: white !important;
+        border: none;
+        border-radius: 4px;
+        padding: 3px 8px;
+        font-size: 12px;
+        margin-top: 5px;
+        cursor: pointer;
+        display: inline-block !important;
+    }
+    
+    .extend-btn:hover {
+        background: #f57c00 !important;
+    }
+    
+    .event-actions {
+        display: flex;
+        gap: 5px;
+        margin-top: 5px;
+    }
+    
+    @keyframes fadeIn { 
+        from { opacity: 0; transform: translateY(10px); } 
+        to { opacity: 1; transform: translateY(0); } 
+    }
+    
+    /* Gradients by event type */
+    .exam { 
+        border-color: #ff416c;
+        background: linear-gradient(45deg, #2a0a12, #4a1420);
+    }
+    .project { 
+        border-color: #99f2c8;
+        background: linear-gradient(45deg, #0d1f1a, #1a3a2e);
+    }
+    .assignment { 
+        border-color: var(--assignment-color);
+        background: linear-gradient(45deg, #1a0d2a, #2e1a4a);
+    }
+    .activity { 
+        border-color: #5b86e5;
+        background: linear-gradient(45deg, #0d1a2a, #1a2e4a);
+    }
+    
+    /* Modal */
+    .modal { 
+        display: none; 
+        position: fixed; 
+        top: 0; 
+        left: 0; 
+        width: 100%; 
+        height: 100%; 
+        background: rgba(0,0,0,0.7); 
+        justify-content: center; 
+        align-items: center; 
+        z-index: 1000;
+        backdrop-filter: blur(5px);
+    }
+    
+    .modal-content { 
+        background: var(--modal-bg); 
+        padding: 25px; 
+        border-radius: 10px; 
+        width: 350px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        transform: scale(0.9);
+        opacity: 0;
+        animation: modalOpen 0.3s forwards;
+    }
+    
+    @keyframes modalOpen {
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+    
+    .modal-content h3 {
+        margin-top: 0;
+        color: var(--text-color);
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 10px;
+    }
+    
+    .modal-content input, 
+    .modal-content select { 
+        width: 100%; 
+        padding: 10px; 
+        margin-bottom: 15px; 
+        border-radius: 5px;
+        border: 1px solid var(--border-color);
+        background: var(--card-color);
+        color: var(--text-color);
+        font-family: inherit;
+    }
+    
+    .modal-content input:focus,
+    .modal-content select:focus {
+        outline: none;
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3);
+    }
+    
+    .modal-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 20px;
+    }
+    
+    .modal-content button { 
+        padding: 10px 15px; 
+        border: none; 
+        border-radius: 5px; 
+        cursor: pointer; 
+        font-weight: bold;
+        transition: all 0.2s ease;
+    }
+    
+    .save-btn { 
+        background: var(--accent-color); 
+        color: white; 
+    }
+    
+    .save-btn:hover {
+        background: var(--accent-hover);
+        transform: translateY(-2px);
+    }
+    
+    .delete-btn { 
+        background: #d32f2f; 
+        color: white; 
+    }
+    
+    .delete-btn:hover {
+        background: #b71c1c;
+        transform: translateY(-2px);
+    }
+    
+    .empty-events {
+        text-align: center;
+        color: #777;
+        padding: 20px;
+        font-style: italic;
+    }
+    
+    /* Notification */
+    .notification {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: var(--notification-color);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 5px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        display: none;
+        z-index: 1001;
+        animation: slideIn 0.3s forwards;
+    }
+    
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    .notification-close {
+        margin-left: 15px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+    
+    /* Deadline reminder toggle */
+    .reminder-toggle {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    
+    .reminder-toggle label {
+        margin-left: 10px;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .container {
+            flex-direction: column;
+        }
+        
+        .calendar, .sidebar {
+            flex: 1 1 100%;
+        }
+        
+        .notification {
+            width: calc(100% - 40px);
+            left: 20px;
+            right: auto;
+        }
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <div class="calendar">
+        <div class="header">
+            <button id="prev">‹</button>
+            <h2 id="monthYear"></h2>
+            <button id="next">›</button>
+        </div>
+        <div class="days">
+            <div>Sun</div><div>Mon</div><div>Tue</div>
+            <div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+        </div>
+        <div class="dates" id="dates"></div>
+    </div>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3>Upcoming Events</h3>
+            <button class="add-event-btn" id="addEventBtn">+</button>
+        </div>
+        <div id="eventList"></div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal" id="eventModal">
+    <div class="modal-content">
+        <h3 id="modalTitle">Add Event</h3>
+        <input type="date" id="eventDate">
+        <input type="text" id="eventTitle" placeholder="Event Title">
+        <select id="eventType">
+            <option value="exam">Exam</option>
+            <option value="project">Project</option>
+            <option value="assignment">Assignment</option>
+            <option value="activity">Activity</option>
+        </select>
+        <div class="reminder-toggle">
+            <input type="checkbox" id="hasDeadline">
+            <label for="hasDeadline">Set Deadline</label>
+        </div>
+        <input type="date" id="deadlineDate" style="display: none;">
+        <div class="reminder-toggle">
+            <input type="checkbox" id="enableNotification">
+            <label for="enableNotification">Enable Notification</label>
+        </div>
+        <div class="modal-actions">
+            <button class="delete-btn" id="deleteEvent" style="display:none;">Delete</button>
+            <button class="save-btn" id="saveEvent">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Notification -->
+<div class="notification" id="notification">
+    <span id="notificationText"></span>
+    <span class="notification-close" onclick="closeNotification()">×</span>
+</div>
+
+<script>
+let currentDate = new Date();
+let events = JSON.parse(localStorage.getItem('events')) || [];
+let notificationTimeout;
+
+function saveEvents() {
+    localStorage.setItem('events', JSON.stringify(events));
+    checkDeadlines();
+}
+
+function checkDeadlines() {
+    // Clear any existing notifications
+    closeNotification();
+    
+    // Check for deadlines approaching today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    events.forEach(event => {
+        if (event.deadline) {
+            const deadlineDate = new Date(event.deadline);
+            deadlineDate.setHours(0, 0, 0, 0);
+            
+            // Calculate days remaining
+            const timeDiff = deadlineDate.getTime() - today.getTime();
+            const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
+            
+            if (daysRemaining >= 0 && daysRemaining <= 3 && event.enableNotification) {
+                // Show notification after a short delay to avoid multiple at once
+                setTimeout(() => {
+                    showNotification(`${event.title} deadline is ${daysRemaining === 0 ? 'today' : `in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}`}!`);
+                }, 500);
+            }
+        }
+    });
+}
+
+function showNotification(message) {
+    const notification = document.getElementById('notification');
+    const notificationText = document.getElementById('notificationText');
+    
+    notificationText.textContent = message;
+    notification.style.display = 'block';
+    
+    // Auto-close after 5 seconds
+    clearTimeout(notificationTimeout);
+    notificationTimeout = setTimeout(closeNotification, 5000);
+}
+
+function closeNotification() {
+    const notification = document.getElementById('notification');
+    notification.style.display = 'none';
+}
+
+function renderCalendar() {
+    const monthYear = document.getElementById('monthYear');
+    const dates = document.getElementById('dates');
+    dates.innerHTML = '';
+    dates.classList.add('fade-slide');
+
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    monthYear.textContent = currentDate.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+
+    for (let i = 0; i < firstDay; i++) {
+        dates.innerHTML += '<div></div>';
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        let dateStr = `${year}-${String(month+1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        let dayEvents = events.filter(e => e.date === dateStr);
+        let isToday = (new Date().toDateString() === new Date(year, month, day).toDateString());
+
+        let eventDots = '';
+        let deadlineDots = '';
+        dayEvents.forEach(e => {
+            let colors = {
+                exam: '#ff416c',
+                project: '#99f2c8',
+                assignment: '#9c27b0',
+                activity: '#5b86e5'
+            };
+            eventDots += `<div class="event" style="background:${colors[e.type]};"></div>`;
+            
+            // Add deadline indicator if this is a deadline date
+            if (e.deadline === dateStr) {
+                deadlineDots += `<div class="deadline"></div>`;
+            }
+        });
+
+        dates.innerHTML += `<div class="${isToday ? 'today' : ''}" onclick="openModal('${dateStr}')">
+            ${day}
+            ${eventDots}
+            ${deadlineDots}
+        </div>`;
+    }
+    
+    // Remove animation class after animation completes
+    setTimeout(() => {
+        dates.classList.remove('fade-slide');
+    }, 500);
+    
+    renderSidebar();
+}
+
+function renderSidebar() {
+    const eventList = document.getElementById('eventList');
+    eventList.innerHTML = '';
+    
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    
+    let upcoming = events.filter(e => new Date(e.date) >= now)
+                       .sort((a,b) => new Date(a.date) - new Date(b.date));
+    
+    let pastEvents = events.filter(e => new Date(e.date) < now)
+                         .sort((a,b) => new Date(b.date) - new Date(a.date));
+
+    if (upcoming.length === 0 && pastEvents.length === 0) {
+        eventList.innerHTML = '<div class="empty-events">No events found<br>Click + to add new event</div>';
+        return;
+    }
+
+    // Display upcoming events
+    upcoming.forEach(e => {
+        let isOverdue = e.deadline && new Date(e.deadline) < now;
+        
+        let eventHTML = `
+            <div class="event-card ${e.type} ${isOverdue ? 'overdue' : ''}" onclick="openModal('${e.date}')">
+                <i>${getEventIcon(e.type)}</i>
+                <div>
+                    <strong>${e.title}</strong><br>
+                    <small>${formatDate(e.date)}</small>
+                    ${e.deadline ? `
+                        <small style="display: block; color: ${isOverdue ? '#ff5722' : '#4CAF50'};">
+                            Deadline: ${formatDate(e.deadline)}
+                            ${isOverdue ? '<span style="color:#ff5722"> (Overdue)</span>' : ''}
+                        </small>
+                    ` : ''}
+                    ${e.deadline ? `
+                        <div class="event-actions">
+                            <button class="extend-btn" onclick="extendDeadline('${e.date}', event)">Extend</button>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+        eventList.innerHTML += eventHTML;
+    });
+
+    // Display past events
+    if (pastEvents.length > 0) {
+        eventList.innerHTML += `<div style="margin: 20px 0 10px; font-weight:bold; border-bottom:1px solid #444;">Past Events</div>`;
+        
+        pastEvents.forEach(e => {
+            eventList.innerHTML += `
+                <div class="event-card ${e.type} past-event" onclick="openModal('${e.date}')">
+                    <i>${getEventIcon(e.type)}</i>
+                    <div>
+                        <strong>${e.title}</strong><br>
+                        <small>${formatDate(e.date)}</small>
+                        ${e.deadline ? `<small style="display: block; color: #777;">Deadline: ${formatDate(e.deadline)}</small>` : ''}
+                        ${e.deadline ? `
+                            <div class="event-actions">
+                                <button class="extend-btn" onclick="extendDeadline('${e.date}', event)">Extend</button>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        });
+    }
+}
+
+// Extend deadline with confirmation
+function extendDeadline(eventDate, clickEvent) {
+    clickEvent.stopPropagation(); // Prevent opening modal when clicking button
+    
+    const event = events.find(e => e.date === eventDate);
+    if (!event) return;
+    
+    if (confirm(`Do you want to extend the deadline for "${event.title}"?`)) {
+        const newDeadline = prompt("Enter new deadline date (YYYY-MM-DD):", event.deadline);
+        
+        if (newDeadline) {
+            const newDeadlineDate = new Date(newDeadline);
+            const currentDeadline = new Date(event.deadline);
+            
+            if (newDeadlineDate > currentDeadline) {
+                event.deadline = newDeadline;
+                saveEvents();
+                renderCalendar();
+                showNotification(`Deadline extended for ${event.title}`);
+            } else {
+                alert("New deadline must be after current deadline.");
+            }
+        }
+    }
+}
+
+// Helper function to get event icon
+function getEventIcon(type) {
+    const icons = { exam: '📝', project: '🛠️', assignment: '📚', activity: '🎉' };
+    return icons[type] || '📅';
+}
+
+// Helper function to format date
+function formatDate(dateStr) {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function openModal(date) {
+    const modal = document.getElementById('eventModal');
+    modal.style.display = 'flex';
+    document.getElementById('eventDate').value = date;
+    
+    let existing = events.find(e => e.date === date);
+    if (existing) {
+        document.getElementById('eventTitle').value = existing.title;
+        document.getElementById('eventType').value = existing.type;
+        document.getElementById('hasDeadline').checked = !!existing.deadline;
+        document.getElementById('deadlineDate').style.display = existing.deadline ? 'block' : 'none';
+        document.getElementById('deadlineDate').value = existing.deadline || '';
+        document.getElementById('enableNotification').checked = !!existing.enableNotification;
+        document.getElementById('deleteEvent').style.display = 'inline-block';
+        document.getElementById('modalTitle').textContent = 'Edit Event';
+    } else {
+        document.getElementById('eventTitle').value = '';
+        document.getElementById('eventType').value = 'exam';
+        document.getElementById('hasDeadline').checked = false;
+        document.getElementById('deadlineDate').style.display = 'none';
+        document.getElementById('deadlineDate').value = '';
+        document.getElementById('enableNotification').checked = true;
+        document.getElementById('deleteEvent').style.display = 'none';
+        document.getElementById('modalTitle').textContent = 'Add Event';
+    }
+}
+
+// Toggle deadline date field visibility
+document.getElementById('hasDeadline').addEventListener('change', function() {
+    document.getElementById('deadlineDate').style.display = this.checked ? 'block' : 'none';
+});
+
+document.getElementById('saveEvent').onclick = function() {
+    let date = document.getElementById('eventDate').value;
+    let title = document.getElementById('eventTitle').value.trim();
+    let type = document.getElementById('eventType').value;
+    let hasDeadline = document.getElementById('hasDeadline').checked;
+    let deadlineDate = hasDeadline ? document.getElementById('deadlineDate').value : null;
+    let enableNotification = document.getElementById('enableNotification').checked;
+    
+    if (!title) {
+        alert('Please enter a title for the event');
+        return;
+    }
+    
+    if (hasDeadline && !deadlineDate) {
+        alert('Please select a deadline date');
+        return;
+    }
+    
+    events = events.filter(e => e.date !== date);
+    events.push({ 
+        date, 
+        title, 
+        type, 
+        deadline: deadlineDate,
+        enableNotification 
+    });
+    saveEvents();
+    closeModal();
+    renderCalendar();
+};
+
+document.getElementById('deleteEvent').onclick = function() {
+    if (confirm('Are you sure you want to delete this event?')) {
+        let date = document.getElementById('eventDate').value;
+        events = events.filter(e => e.date !== date);
+        saveEvents();
+        closeModal();
+        renderCalendar();
+    }
+};
+
+function closeModal() {
+    const modal = document.getElementById('eventModal');
+    modal.style.display = 'none';
+}
+
+document.getElementById('prev').onclick = () => { 
+    currentDate.setMonth(currentDate.getMonth() - 1); 
+    renderCalendar(); 
+};
+
+document.getElementById('next').onclick = () => { 
+    currentDate.setMonth(currentDate.getMonth() + 1); 
+    renderCalendar(); 
+};
+
+document.getElementById('addEventBtn').onclick = () => {
+    let today = new Date();
+    let dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    openModal(dateStr);
+};
+
+window.onclick = function(e) {
+    if (e.target == document.getElementById('eventModal')) {
+        closeModal();
+    }
+};
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeModal();
+    }
+});
+
+// Initialize the calendar
+renderCalendar();
+checkDeadlines();
+
+// Check for deadlines every hour
+setInterval(checkDeadlines, 3600000);
+</script>
+
+</body>
+</html>
